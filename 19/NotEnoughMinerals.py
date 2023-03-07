@@ -143,7 +143,7 @@ def part_one():
 
 def testing_task(blueprint_info):
 	idx, blueprint = blueprint_info
-	best_state = test_blueprint(blueprint, num_turns=24)
+	best_state = test_blueprint(blueprint, num_turns=32)
 	num_geodes = best_state.materials["geode"]
 
 	with open(f"Blueprint {idx}.txt", "w") as file:
