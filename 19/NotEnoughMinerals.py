@@ -10,7 +10,7 @@ def get_data(path):
 	with open(path) as file:
 		data = file.read().split("\n")
 
-	blueprints = [get_blueprint(row) for row in data]
+	blueprints = [(idx+1, get_blueprint(row)) for idx, row in enumerate(data)]
 
 	return blueprints
 
@@ -29,10 +29,10 @@ def get_cost(sentence):
 
 def get_blueprint(row):
 	sentences = row.split(":")[1].split(".")[:-1]
-	robot_costs = [get_cost(sentence) for sentence in sentences]
-	robot_costs = {robot: cost for robot, cost in robot_costs}
+	blueprints = [get_cost(sentence) for sentence in sentences]
+	blueprints = {robot: cost for robot, cost in blueprints}
 
-	return robot_costs
+	return blueprints
 
 MATERIALS = ("ore", "clay", "obsidian", "geode")
 
@@ -135,25 +135,31 @@ def part_one():
 	blueprints = get_data("input.txt")
 	
 	quality_level = list()
-	for idx, blueprint in enumerate(tqdm(blueprints)):
+	for idx, blueprint in tqdm(blueprints):
 		best_state = test_blueprint(blueprint)
-		quality_level.append((idx+1) * best_state.materials["geode"])
+		quality_level.append(idx * best_state.materials["geode"])
 
 	print(sum(quality_level))
 
+def testing_task(blueprint_info):
+	idx, blueprint = blueprint_info
+	best_state = test_blueprint(blueprint, num_turns=24)
+	num_geodes = best_state.materials["geode"]
+
+	with open(f"Blueprint {idx}.txt", "w") as file:
+		file.write(f"{num_geodes}")
+
+	return num_geodes
 
 def part_two():
 	blueprints = get_data("input.txt")
 	
-	blueprint_tester = partial(test_blueprint, num_turns=32)
 	with Pool() as pool:
-		best_states = pool.map(blueprint_tester, blueprints)
+		num_geodes = pool.map(testing_task, blueprints)
 
-	non_index_adjusted_quality_level = [state.materials["geode"] for state in best_states]
-	quality_level = [(idx+1)*level for idx, level in enumerate(non_index_adjusted_quality_level)]
+	quality_level = [(idx+1)*level for idx, level in enumerate(num_geodes)]
 	print(sum(quality_level))
 
 if __name__ == '__main__':
 	# part_one()
 	part_two()
-
