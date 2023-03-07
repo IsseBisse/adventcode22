@@ -83,7 +83,7 @@ def part_one():
 	states = sorted(states, key=lambda item: item[2])
 	print(states[-1])
 
-
+# VEEERY slow
 def part_two():
 	data = get_data("input.txt")
 
