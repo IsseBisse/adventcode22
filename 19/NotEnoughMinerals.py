@@ -128,6 +128,7 @@ def test_blueprint(blueprint, num_turns=24):
 		states = best_states
 		
 	states = sorted(states, key=lambda item: item.materials["geode"])
+	print("Done!")
 	return states[-1]
 
 def part_one():
