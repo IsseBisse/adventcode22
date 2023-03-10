@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import partial
 from multiprocessing import Pool
+import os
 import re
 from typing import Dict
 from tqdm import tqdm
@@ -104,6 +105,7 @@ def test_blueprint(blueprint, num_turns=24):
 
 	states = [start_state]
 	for turn in range(num_turns):
+		print(turn, flush=True)
 		next_states = list()
 		for state in states:
 			next_states += one_turn(state, blueprint)
@@ -146,20 +148,41 @@ def testing_task(blueprint_info):
 	best_state = test_blueprint(blueprint, num_turns=32)
 	num_geodes = best_state.materials["geode"]
 
-	with open(f"Blueprint {idx}.txt", "w") as file:
-		file.write(f"{num_geodes}")
+	# with open(f"Blueprint {idx}.txt", "w") as file:
+	# 	file.write(f"{num_geodes}")
 
 	return num_geodes
 
 def part_two():
-	blueprints = get_data("input.txt")
+	blueprints = get_data("smallInput.txt")
 	
 	with Pool() as pool:
 		num_geodes = pool.map(testing_task, blueprints)
 
-	quality_level = [(idx+1)*level for idx, level in enumerate(num_geodes)]
-	print(sum(quality_level))
+	print(num_geodes)
+
+def part_two_read():
+	answer = 1
+	for file_name in os.listdir():
+		match = re.findall(r"Blueprint ([0-9]+)", file_name)
+		if not match:
+			continue
+
+		number = int(match[0])
+		if number > 3:
+			continue
+
+		print(file_name)
+
+		with open(file_name) as file:
+			num_geodes = int(file.read())
+
+		answer *= num_geodes
+
+	print(answer)
+
 
 if __name__ == '__main__':
 	# part_one()
 	part_two()
+	# part_two_read()
