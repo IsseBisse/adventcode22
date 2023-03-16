@@ -105,7 +105,7 @@ def test_blueprint(blueprint, num_turns=24):
 
 	states = [start_state]
 	for turn in range(num_turns):
-		print(turn, flush=True)
+		# print(turn, flush=True)
 		next_states = list()
 		for state in states:
 			next_states += one_turn(state, blueprint)
@@ -130,7 +130,7 @@ def test_blueprint(blueprint, num_turns=24):
 		states = best_states
 		
 	states = sorted(states, key=lambda item: item.materials["geode"])
-	print("Done!")
+	# print("Done!")
 	return states[-1]
 
 def part_one():
@@ -145,8 +145,10 @@ def part_one():
 
 def testing_task(blueprint_info):
 	idx, blueprint = blueprint_info
-	best_state = test_blueprint(blueprint, num_turns=32)
+	best_state = test_blueprint(blueprint, num_turns=18)
 	num_geodes = best_state.materials["geode"]
+
+	print(f"Blueprint {idx+1}: {num_geodes}")
 
 	# with open(f"Blueprint {idx}.txt", "w") as file:
 	# 	file.write(f"{num_geodes}")
@@ -158,8 +160,6 @@ def part_two():
 	
 	with Pool() as pool:
 		num_geodes = pool.map(testing_task, blueprints)
-
-	print(num_geodes)
 
 def part_two_read():
 	answer = 1
