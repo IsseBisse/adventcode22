@@ -1,4 +1,3 @@
-from functools import lru_cache
 from math import ceil
 import re
 
@@ -28,70 +27,69 @@ def get_cost(sentence):
 
 def get_blueprint(row):
 	sentences = row.split(":")[1].split(".")[:-1]
-	blueprint = [get_cost(sentence) for sentence in sentences]
-	blueprint = {robot: cost for robot, cost in blueprint}
+	blueprints = [get_cost(sentence) for sentence in sentences]
+	blueprints = {robot: cost for robot, cost in blueprints}
 
-	blueprint = tuple(tuple(recipe.values()) for recipe in blueprint.values())
-	return blueprint
+	return blueprints
 
 MATERIALS = ("ore", "clay", "obsidian", "geode")
 
 
-@lru_cache
 def time_to_buy(inventory, robots, recipe):
-	minutes_to_buy = 1
+	additional_inventory = dict()
+	minutes_to_buy = list()
 
-	for material_idx in range(4):
-		if recipe[material_idx] == 0:
-			continue
+	non_zero_recipe = {key: value for key, value in recipe.items() if value > 0}
+	for material in non_zero_recipe:
+		additional_inventory = recipe[material] - inventory[material]
 		
-		if robots[material_idx] == 0:
+		if robots[material] == 0:
 			return None
 
-		additional_inventory = recipe[material_idx] - inventory[material_idx]
-		minutes_to_buy = max(minutes_to_buy, ceil(additional_inventory / robots[material_idx]) + 1)
+
+		minutes_to_buy.append(max(0, ceil(additional_inventory / robots[material])))
+
+	if len(minutes_to_buy) == 0:
+		return None
 
 	# Add one minute for build time
+	minutes_to_buy = max(minutes_to_buy) + 1
 	return minutes_to_buy
 
 
-@lru_cache
 def fastforward(inventory, robots, minutes, recipe=None):
-	new_inventory = [0] * 4
-	for material_idx in range(4):
-		new_inventory[material_idx] += inventory[material_idx] + minutes * robots[material_idx]
-		new_inventory[material_idx] -= recipe[material_idx] if recipe is not None else 0
+	new_inventory = dict()
+	for material in inventory:
+		new_inventory[material] = inventory[material] + minutes * robots[material]
+		new_inventory[material] -= recipe[material] if recipe is not None else 0
 
-	return tuple(new_inventory)
-
-
-@lru_cache
-def add_robot(robots, material_idx):
-	new_robots = list(robots)
-	new_robots[material_idx] += 1
-	return tuple(new_robots)
+	return new_inventory
 
 
-@lru_cache
+def add_robot(robots, material):
+	new_robots = {key: value for key, value in robots.items()}
+	new_robots[material] += 1
+	return new_robots
+
+
 def theoretical_max_geodes(inventory, robots, minutes_left):
-	max_geodes = inventory[3] + sum(range(robots[3], robots[3]+minutes_left))
+	max_geodes = inventory["geode"] + sum(range(robots["geode"], robots["geode"]+minutes_left))
 	return max_geodes
 
 
 def blueprint_tester(blueprint):
-	max_robot_amount = [max(recipe[material_idx] for recipe in blueprint) for material_idx in range(4)]
-	max_robot_amount[3] = -1
-	max_robot_amount = tuple(max_robot_amount)
+	max_robot_amount = {material: max(cost[material] for cost in blueprint.values()) for material in MATERIALS}
+	max_robot_amount["geode"] = -1
 	
 	def best_path(state, minutes_left):
 		inventory, robots = state
 		
 		path_geodes = list()
-		for material_idx in range(4):
-			if robots[material_idx] == max_robot_amount[material_idx]:
+		for material in MATERIALS:
+			if robots[material] == max_robot_amount[material]:
 				continue
 
-			recipe = blueprint[material_idx]
+			recipe = blueprint[material]
 			minutes_to_buy = time_to_buy(inventory, robots, recipe)
 			if minutes_to_buy is None or minutes_to_buy > minutes_left:
 				continue
@@ -99,7 +97,7 @@ def blueprint_tester(blueprint):
 			# print(state, minutes_left, material, minutes_to_buy)
 
 			new_inventory = fastforward(inventory, robots, minutes_to_buy, recipe)
-			new_robots = add_robot(robots, material_idx)
+			new_robots = add_robot(robots, material)
 			new_state = (new_inventory, new_robots)
 			new_minutes_left = minutes_left - minutes_to_buy
 
@@ -110,7 +108,7 @@ def blueprint_tester(blueprint):
 		if len(path_geodes) == 0:
 			# No possible robot purchases. Run until end
 			inventory = fastforward(inventory, robots, minutes_left)
-			return inventory[3]
+			return inventory["geode"]
 		
 		else:
 			return max(path_geodes)
@@ -124,8 +122,9 @@ def part_one():
 	quality_level = list()
 	for idx, blueprint in blueprints:
 		best_path = blueprint_tester(blueprint)
-		inventory = (0, 0, 0, 0)
-		robots = (1, 0, 0, 0)
+		inventory = {material: 0 for material in MATERIALS}
+		robots = {material: 0 for material in MATERIALS}
+		robots["ore"] = 1
 		state = (inventory, robots)
 		minutes_left = 24
 
@@ -144,10 +143,11 @@ def part_two():
 	num_geodes = list()
 	for idx, blueprint in blueprints:
 		best_path = blueprint_tester(blueprint)
-		inventory = (0, 0, 0, 0)
-		robots = (1, 0, 0, 0)
+		inventory = {material: 0 for material in MATERIALS}
+		robots = {material: 0 for material in MATERIALS}
+		robots["ore"] = 1
 		state = (inventory, robots)
-		minutes_left = 32
+		minutes_left = 28
 
 		geodes = best_path(state, minutes_left)
 		num_geodes.append(geodes)
